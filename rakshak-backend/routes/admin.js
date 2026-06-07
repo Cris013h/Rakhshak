@@ -4,6 +4,12 @@ import { Staff } from "../models/Staff.js";
 import { Session } from "../models/Session.js";
 import { authenticateToken, requireAdmin, getClientIp, getActiveSessionCount } from "../middleware/auth.js";
 import { generateTxHash } from "../services/blockchain.js";
+import {
+  getFirewallLogs,
+  getFirewallStats,
+  getTrafficData,
+  unblockIp,
+} from "../middleware/firewall.js";
 
 const router = express.Router();
 
@@ -105,6 +111,27 @@ router.post("/unlock/:idNumber", async (req, res) => {
   });
 
   return res.json({ message: `Account ${idNumber} unlocked` });
+});
+
+router.get("/firewall/logs", async (_req, res) => {
+  const logs = await getFirewallLogs();
+  return res.json({ logs });
+});
+
+router.get("/firewall/stats", async (_req, res) => {
+  const stats = await getFirewallStats();
+  return res.json(stats);
+});
+
+router.get("/firewall/traffic", async (_req, res) => {
+  const traffic = getTrafficData();
+  return res.json({ traffic });
+});
+
+router.post("/firewall/unblock/:ip", async (req, res) => {
+  const ip = decodeURIComponent(req.params.ip);
+  await unblockIp(ip);
+  return res.json({ message: `IP ${ip} has been unblocked` });
 });
 
 router.get("/registered-users", async (req, res) => {
