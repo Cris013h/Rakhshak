@@ -21,12 +21,53 @@ import {
   MAX_FAILED_ATTEMPTS,
 } from "../services/lockoutService.js";
 import { addSession, removeSession } from "../services/sessionTracker.js";
+import { getPublicKey, decryptRSA } from "../services/rsaService.js";
+import { getBlockchainStatus } from "../services/blockchain.js";
 
 const router = express.Router();
 
+router.get("/public-key", (_req, res) => {
+  try {
+    const publicKey = getPublicKey();
+    return res.json({ publicKey });
+  } catch (err) {
+    console.error("Public key error:", err);
+    return res.status(500).json({ error: "Failed to load public key" });
+  }
+});
+
+router.get("/blockchain-status", async (_req, res) => {
+  try {
+    const status = await getBlockchainStatus();
+    return res.json(status);
+  } catch (err) {
+    console.error("Blockchain status error:", err);
+    return res.json({ connected: false, blockNumber: 0, enabled: false });
+  }
+});
+
 router.post("/login", async (req, res) => {
-  const { hospitalName, post, idNumber, password } = req.body;
   const ipAddress = getClientIp(req);
+  let hospitalName;
+  let post;
+  let idNumber;
+  let password;
+
+  if (req.body.encrypted) {
+    try {
+      const decryptedJson = decryptRSA(req.body.encrypted);
+      const credentials = JSON.parse(decryptedJson);
+      hospitalName = credentials.hospitalName;
+      post = credentials.post;
+      idNumber = credentials.idNumber;
+      password = credentials.password;
+    } catch (err) {
+      console.error("RSA decryption failed:", err.message);
+      return res.status(400).json({ error: "Invalid encrypted credentials. Decryption failed." });
+    }
+  } else {
+    ({ hospitalName, post, idNumber, password } = req.body);
+  }
 
   if (!hospitalName || !post || !idNumber || !password) {
     return res.status(400).json({ error: "All fields are required" });
@@ -175,6 +216,7 @@ router.post("/login", async (req, res) => {
         ward: staff.ward || "",
       },
       blockchainVerified,
+      rsaDecrypted: Boolean(req.body.encrypted),
       txHash,
     });
   } catch (err) {

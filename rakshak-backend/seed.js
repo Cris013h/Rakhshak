@@ -26,17 +26,37 @@ const STAFF_SEED = [
   { hospital_name: "City General", post: "Receptionist", id_number: "REC001", password: "recep123", ward: "" },
 ];
 
+function patientSeed(entry) {
+  return {
+    name: entry.name,
+    dateOfBirth: entry.dob,
+    age: entry.age,
+    ward: entry.ward,
+    assigned_doctor_id: "DOC001",
+    diagnosis: entry.condition,
+    prescription: entry.rx,
+    medicalHistory: entry.medical_notes,
+    insuranceNumber: entry.insurance,
+    address: entry.address,
+    phoneNumber: entry.phone,
+    emergencyContact: entry.emergency,
+    condition: entry.condition,
+    status: entry.status,
+    medical_notes: entry.medical_notes,
+  };
+}
+
 const PATIENTS_SEED = [
-  { name: "Rajesh Kumar", age: 54, ward: "Ward A", assigned_doctor_id: "DOC001", condition: "Hypertension", status: "Stable", medical_notes: "BP monitoring required. Currently on Amlodipine 5mg." },
-  { name: "Priya Sharma", age: 32, ward: "Ward B", assigned_doctor_id: "DOC001", condition: "Prenatal Care", status: "Monitoring", medical_notes: "32 weeks gestation. Regular ultrasounds scheduled." },
-  { name: "Amit Patel", age: 67, ward: "Ward A", assigned_doctor_id: "DOC001", condition: "Post-surgery Recovery", status: "Critical", medical_notes: "Hip replacement surgery 3 days ago. Watch for infection." },
-  { name: "Sunita Devi", age: 45, ward: "Ward A", assigned_doctor_id: "DOC001", condition: "Diabetes Type 2", status: "Stable", medical_notes: "HbA1c at 7.2%. Metformin 500mg twice daily." },
-  { name: "Vikram Singh", age: 28, ward: "Ward C", assigned_doctor_id: "DOC001", condition: "Fracture", status: "Stable", medical_notes: "Right femur fracture. Cast applied, follow-up in 6 weeks." },
-  { name: "Anita Rao", age: 61, ward: "Ward A", assigned_doctor_id: "DOC001", condition: "Arrhythmia", status: "Monitoring", medical_notes: "Atrial fibrillation. On Warfarin 2mg daily." },
-  { name: "Deepak Verma", age: 50, ward: "Ward B", assigned_doctor_id: "DOC001", condition: "Pneumonia", status: "Monitoring", medical_notes: "Chest X-ray shows left lower lobe infiltrate." },
-  { name: "Kavita Joshi", age: 38, ward: "Ward A", assigned_doctor_id: "DOC001", condition: "Asthma", status: "Stable", medical_notes: "Mild persistent asthma. Using Salbutamol inhaler PRN." },
-  { name: "Ravi Gupta", age: 72, ward: "Ward C", assigned_doctor_id: "DOC001", condition: "COPD", status: "Critical", medical_notes: "On supplemental O2 2L/min. Spirometry shows severe obstruction." },
-  { name: "Meera Nair", age: 29, ward: "Ward B", assigned_doctor_id: "DOC001", condition: "Appendicitis", status: "Stable", medical_notes: "Post-appendectomy day 2. Tolerating oral fluids." },
+  patientSeed({ name: "Rajesh Kumar", dob: "1972-03-15", age: 54, ward: "Ward A", condition: "Hypertension", status: "Stable", medical_notes: "BP monitoring required. Currently on Amlodipine 5mg.", rx: "Amlodipine 5mg daily", insurance: "INS-RAJ-5401", address: "12 MG Road, Mumbai", phone: "+91-9876543210", emergency: "Sunita Kumar +91-9876543211" }),
+  patientSeed({ name: "Priya Sharma", dob: "1994-08-22", age: 32, ward: "Ward B", condition: "Prenatal Care", status: "Monitoring", medical_notes: "32 weeks gestation. Regular ultrasounds scheduled.", rx: "Prenatal vitamins", insurance: "INS-PRI-3202", address: "45 Park Street, Delhi", phone: "+91-9876543220", emergency: "Rahul Sharma +91-9876543221" }),
+  patientSeed({ name: "Amit Patel", dob: "1959-11-03", age: 67, ward: "Ward A", condition: "Post-surgery Recovery", status: "Critical", medical_notes: "Hip replacement surgery 3 days ago. Watch for infection.", rx: "Morphine 10mg PRN", insurance: "INS-AMI-6703", address: "78 Ring Road, Ahmedabad", phone: "+91-9876543230", emergency: "Neha Patel +91-9876543231" }),
+  patientSeed({ name: "Sunita Devi", dob: "1981-01-28", age: 45, ward: "Ward A", condition: "Diabetes Type 2", status: "Stable", medical_notes: "HbA1c at 7.2%. Metformin 500mg twice daily.", rx: "Metformin 500mg BID", insurance: "INS-SUN-4504", address: "23 Civil Lines, Jaipur", phone: "+91-9876543240", emergency: "Raj Devi +91-9876543241" }),
+  patientSeed({ name: "Vikram Singh", dob: "1998-06-10", age: 28, ward: "Ward C", condition: "Fracture", status: "Stable", medical_notes: "Right femur fracture. Cast applied, follow-up in 6 weeks.", rx: "Ibuprofen 400mg TID", insurance: "INS-VIK-2805", address: "56 Mall Road, Chandigarh", phone: "+91-9876543250", emergency: "Harpreet Singh +91-9876543251" }),
+  patientSeed({ name: "Anita Rao", dob: "1965-09-17", age: 61, ward: "Ward A", condition: "Arrhythmia", status: "Monitoring", medical_notes: "Atrial fibrillation. On Warfarin 2mg daily.", rx: "Warfarin 2mg daily", insurance: "INS-ANI-6106", address: "89 Residency Road, Bangalore", phone: "+91-9876543260", emergency: "Suresh Rao +91-9876543261" }),
+  patientSeed({ name: "Deepak Verma", dob: "1976-04-05", age: 50, ward: "Ward B", condition: "Pneumonia", status: "Monitoring", medical_notes: "Chest X-ray shows left lower lobe infiltrate.", rx: "Amoxicillin 500mg TID", insurance: "INS-DEE-5007", address: "34 Station Road, Lucknow", phone: "+91-9876543270", emergency: "Pooja Verma +91-9876543271" }),
+  patientSeed({ name: "Kavita Joshi", dob: "1988-12-30", age: 38, ward: "Ward A", condition: "Asthma", status: "Stable", medical_notes: "Mild persistent asthma. Using Salbutamol inhaler PRN.", rx: "Salbutamol inhaler PRN", insurance: "INS-KAV-3808", address: "67 Lake View, Pune", phone: "+91-9876543280", emergency: "Ajay Joshi +91-9876543281" }),
+  patientSeed({ name: "Ravi Gupta", dob: "1954-02-14", age: 72, ward: "Ward C", condition: "COPD", status: "Critical", medical_notes: "On supplemental O2 2L/min. Spirometry shows severe obstruction.", rx: "Tiotropium 18mcg daily", insurance: "INS-RAV-7209", address: "91 GT Road, Kolkata", phone: "+91-9876543290", emergency: "Lata Gupta +91-9876543291" }),
+  patientSeed({ name: "Meera Nair", dob: "1997-07-19", age: 29, ward: "Ward B", condition: "Appendicitis", status: "Stable", medical_notes: "Post-appendectomy day 2. Tolerating oral fluids.", rx: "Paracetamol 500mg PRN", insurance: "INS-MEE-2910", address: "15 Marine Drive, Kochi", phone: "+91-9876543300", emergency: "Arun Nair +91-9876543301" }),
 ];
 
 const PRESCRIPTIONS_SEED = [
@@ -84,10 +104,11 @@ async function main() {
     console.log(`  Registered ${s.id_number} (${s.post})`);
   }
 
-  console.log("\nSeeding patients...");
+  console.log("\nSeeding patients (AES-256 encrypted at rest)...");
   for (const p of PATIENTS_SEED) {
-    await Patient.create(p);
-    console.log(`  Added patient: ${p.name}`);
+    const patient = await Patient.create(p);
+    const decrypted = patient.toDecrypted();
+    console.log(`  Added patient: ${decrypted.name}`);
   }
 
   console.log("\nSeeding prescriptions...");

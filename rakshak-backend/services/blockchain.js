@@ -88,3 +88,27 @@ export async function logAuditEvent({ staffId, action, details, ipAddress }) {
 export function isBlockchainEnabled() {
   return Boolean(getContract());
 }
+
+export async function getBlockNumber() {
+  const chainContract = getContract();
+  if (!chainContract || !provider) {
+    return null;
+  }
+
+  try {
+    return await provider.getBlockNumber();
+  } catch (err) {
+    console.error("Failed to fetch block number:", err.message);
+    return null;
+  }
+}
+
+export async function getBlockchainStatus() {
+  const enabled = isBlockchainEnabled();
+  const blockNumber = enabled ? await getBlockNumber() : null;
+  return {
+    connected: enabled && blockNumber !== null,
+    blockNumber: blockNumber ?? 0,
+    enabled,
+  };
+}

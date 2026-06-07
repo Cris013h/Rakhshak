@@ -41,6 +41,8 @@ router.get("/stats", async (req, res) => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
+  const firewallStats = await getFirewallStats();
+
   const [totalLoginsToday, failedAttempts, anomalies, activeSessions] = await Promise.all([
     AuditLog.countDocuments({
       action: "LOGIN",
@@ -59,7 +61,35 @@ router.get("/stats", async (req, res) => {
     getActiveSessionCount(),
   ]);
 
-  return res.json({ totalLoginsToday, failedAttempts, activeSessions, anomalies });
+  return res.json({
+    totalLoginsToday,
+    failedAttempts,
+    activeSessions,
+    anomalies,
+    blockedIPs: firewallStats?.activeBlockedIps ?? 0,
+  });
+});
+
+router.get("/encryption-status", async (_req, res) => {
+  const { getPublicKey } = await import("../services/rsaService.js");
+  const { Patient } = await import("../models/Patient.js");
+  const patientCount = await Patient.countDocuments();
+
+  return res.json({
+    rsa: {
+      algorithm: "RSA-2048",
+      status: "active",
+      publicKeyAvailable: Boolean(getPublicKey()),
+    },
+    aes: {
+      algorithm: "AES-256-CBC",
+      status: process.env.AES_SECRET_KEY?.length === 32 ? "active" : "misconfigured",
+      keyLength: process.env.AES_SECRET_KEY?.length ?? 0,
+    },
+    encryptedRecords: patientCount,
+    transitEncryption: "RSA-OAEP/PKCS1-v1.5",
+    atRestEncryption: "AES-256-CBC with per-record IV",
+  });
 });
 
 router.get("/anomalies", async (req, res) => {

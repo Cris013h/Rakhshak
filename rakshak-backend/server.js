@@ -10,7 +10,9 @@ import doctorRoutes from "./routes/doctor.js";
 import nurseRoutes from "./routes/nurse.js";
 import pharmacistRoutes from "./routes/pharmacist.js";
 import receptionistRoutes from "./routes/receptionist.js";
-import { firewallMiddleware } from "./middleware/firewall.js";
+import patientRoutes from "./routes/patients.js";
+import { firewallMiddleware, initFirewall } from "./middleware/firewall.js";
+import { initRSAKeys } from "./services/rsaService.js";
 
 dotenv.config();
 
@@ -33,11 +35,15 @@ app.use("/api/doctor", doctorRoutes);
 app.use("/api/nurse", nurseRoutes);
 app.use("/api/pharmacist", pharmacistRoutes);
 app.use("/api/receptionist", receptionistRoutes);
+app.use("/api/patients", patientRoutes);
 
 async function start() {
   try {
+    initRSAKeys();
+    console.log("RSA keys loaded");
     await mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/rakshak");
     console.log("MongoDB connected");
+    await initFirewall();
   } catch (err) {
     console.error("MongoDB connection failed:", err.message);
     process.exit(1);

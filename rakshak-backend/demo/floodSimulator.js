@@ -26,7 +26,7 @@ function formatStatus(statusCode) {
   return `${statusCode}`;
 }
 
-async function sendRequest({ method, path, body, index, total, label }) {
+async function sendRequest({ method, path, body, index, total }) {
   const options = {
     method,
     headers: {
@@ -44,13 +44,21 @@ async function sendRequest({ method, path, body, index, total, label }) {
     const response = await fetch(`${BASE_URL}${path}`, options);
     statusCode = response.status;
   } catch (err) {
-    console.log(`Request ${index}/${total} (${label}) → Error: ${err.message}`);
+    console.log(`Request ${index}/${total} → Error: ${err.message}`);
     return { statusCode: 0, blocked: false };
   }
 
   const blocked = statusCode === 429 || statusCode === 403;
-  console.log(`Request ${index}/${total} (${label}) → Status: ${formatStatus(statusCode)}`);
+  console.log(`Request ${index}/${total} → Status: ${formatStatus(statusCode)}`);
   return { statusCode, blocked };
+}
+
+function printSummary(label, results) {
+  const total = results.length;
+  const blocked = results.filter((r) => r.blocked).length;
+  const allowed = total - blocked;
+  console.log(`\n${label}`);
+  console.log(`Total Requests: ${total} | Blocked: ${blocked} | Allowed: ${allowed}`);
 }
 
 async function runBruteForcePhase() {
@@ -69,7 +77,6 @@ async function runBruteForcePhase() {
       },
       index: i,
       total: 100,
-      label: "login",
     });
     results.push(result);
   }
@@ -87,7 +94,6 @@ async function runScrapingPhase() {
       path: "/api/audit-logs",
       index: i,
       total: 50,
-      label: "scrape",
     });
     results.push(result);
   }
@@ -103,7 +109,10 @@ async function main() {
   console.log(`Target: ${BASE_URL}\n`);
 
   const loginResults = await runBruteForcePhase();
+  printSummary("Phase 1 Summary:", loginResults);
+
   const scrapeResults = await runScrapingPhase();
+  printSummary("Phase 2 Summary:", scrapeResults);
 
   const allResults = [...loginResults, ...scrapeResults];
   const total = allResults.length;

@@ -97,10 +97,7 @@ function scanRequestBody(req) {
   return null;
 }
 
-async function logBlockToDb({ ip, attackType, requestDetails }) {
-  const attempts = (ipAttemptCounts.get(ip) || 0) + 1;
-  ipAttemptCounts.set(ip, attempts);
-
+async function persistBlockLog({ ip, attackType, requestDetails, attempts }) {
   const txHash = await logDataAccessOnChain({
     idNumber: ip,
     hospitalName: "FIREWALL",
@@ -119,20 +116,21 @@ async function logBlockToDb({ ip, attackType, requestDetails }) {
   });
 }
 
-async function addToBlocklist(ip, attackType, requestDetails) {
-  if (blocklist.has(ip)) return;
+function recordBlock({ ip, attackType, requestDetails, permanent = false }) {
+  const attempts = (ipAttemptCounts.get(ip) || 0) + 1;
+  ipAttemptCounts.set(ip, attempts);
 
-  blocklist.set(ip, {
-    attackType,
-    blockedAt: Date.now(),
-    attempts: ipAttemptCounts.get(ip) || 1,
-  });
-
-  try {
-    await logBlockToDb({ ip, attackType, requestDetails });
-  } catch (err) {
-    console.error("Firewall log failed:", err.message);
+  if (permanent && !blocklist.has(ip)) {
+    blocklist.set(ip, {
+      attackType,
+      blockedAt: Date.now(),
+      attempts,
+    });
   }
+
+  void persistBlockLog({ ip, attackType, requestDetails, attempts }).catch((err) => {
+    console.error("Firewall log failed:", err.message);
+  });
 }
 
 function isRateLimited(ip) {
@@ -151,13 +149,9 @@ function applyRateLimitBlock(ip) {
   rateLimitBlocks.set(ip, Date.now() + RATE_LIMIT_BLOCK_MS);
 }
 
-async function checkFloodAttack(ip, requestDetails) {
+function checkFloodAttack(ip) {
   const timestamps = pruneOldTimestamps(ip);
-  if (timestamps.length > FLOOD_THRESHOLD) {
-    await addToBlocklist(ip, "FLOOD_ATTACK", requestDetails);
-    return true;
-  }
-  return false;
+  return timestamps.length > FLOOD_THRESHOLD;
 }
 
 function trackRequest(ip) {
@@ -170,6 +164,35 @@ function trackFailedLogin(ip) {
   const count = (failedLoginCounts.get(ip) || 0) + 1;
   failedLoginCounts.set(ip, count);
   return count;
+}
+
+export async function initFirewall() {
+  try {
+    const blocked = await FirewallLog.aggregate([
+      { $match: { status: "Blocked" } },
+      { $sort: { timestamp: -1 } },
+      {
+        $group: {
+          _id: "$ip",
+          attackType: { $first: "$attackType" },
+          attempts: { $max: "$attempts" },
+        },
+      },
+    ]);
+
+    for (const entry of blocked) {
+      blocklist.set(entry._id, {
+        attackType: entry.attackType,
+        blockedAt: Date.now(),
+        attempts: entry.attempts || 1,
+      });
+      ipAttemptCounts.set(entry._id, entry.attempts || 1);
+    }
+
+    console.log(`Firewall: restored ${blocklist.size} blocked IP(s) from database`);
+  } catch (err) {
+    console.error("Firewall init failed:", err.message);
+  }
 }
 
 export async function unblockIp(ip) {
@@ -198,7 +221,7 @@ export async function getFirewallStats() {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  const [blockedToday, activeBlocked, attackAgg] = await Promise.all([
+  const [blockedToday, dbBlockedIps, attackAgg] = await Promise.all([
     FirewallLog.countDocuments({
       timestamp: { $gte: todayStart },
     }),
@@ -211,9 +234,11 @@ export async function getFirewallStats() {
     ]),
   ]);
 
+  const activeBlockedIps = new Set([...blocklist.keys(), ...dbBlockedIps]).size;
+
   return {
     totalAttacksBlockedToday: blockedToday,
-    activeBlockedIps: activeBlocked.length,
+    activeBlockedIps,
     mostCommonAttackType: attackAgg[0]?._id || "None",
   };
 }
@@ -236,7 +261,28 @@ export async function getFirewallLogs() {
     { $limit: 100 },
   ]);
 
-  return logs;
+  return logs.map((entry) => ({
+    ...entry,
+    status: blocklist.has(entry.ip) ? "Blocked" : entry.status,
+  }));
+}
+
+function sendBlocked(res, statusCode, ip, attackType, requestDetails, permanent = false) {
+  recordTraffic(true);
+  recordBlock({ ip, attackType, requestDetails, permanent });
+
+  const body = {
+    error:
+      statusCode === 429
+        ? "Too many requests from this IP. You have been temporarily blocked."
+        : "Your IP has been blocked due to suspicious activity.",
+  };
+
+  if (statusCode === 403) {
+    body.attackType = attackType;
+  }
+
+  return res.status(statusCode).json(body);
 }
 
 export function firewallMiddleware() {
@@ -251,56 +297,28 @@ export function firewallMiddleware() {
 
     const patternAttack = scanRequestBody(req);
     if (patternAttack) {
-      recordTraffic(true);
-      await addToBlocklist(ip, patternAttack, requestDetails);
-      return res.status(403).json({
-        error: "Your IP has been blocked due to suspicious activity.",
-        attackType: patternAttack,
-      });
+      return sendBlocked(res, 403, ip, patternAttack, requestDetails, true);
+    }
+
+    if (blocklist.has(ip)) {
+      const entry = blocklist.get(ip);
+      return sendBlocked(res, 403, ip, entry.attackType, requestDetails, true);
     }
 
     trackRequest(ip);
 
-    const flooded = await checkFloodAttack(ip, requestDetails);
-    if (flooded) {
-      recordTraffic(true);
-      return res.status(403).json({
-        error: "Your IP has been blocked due to suspicious activity.",
-        attackType: "FLOOD_ATTACK",
-      });
+    if (checkFloodAttack(ip)) {
+      return sendBlocked(res, 403, ip, "FLOOD_ATTACK", requestDetails, true);
     }
 
     if (isRateLimited(ip)) {
-      recordTraffic(true);
-      return res.status(429).json({
-        error: "Too many requests from this IP. You have been temporarily blocked.",
-      });
+      return sendBlocked(res, 429, ip, "RATE_LIMIT_EXCEEDED", requestDetails, false);
     }
 
     const recentCount = pruneOldTimestamps(ip).length;
     if (recentCount > RATE_LIMIT_MAX) {
-      recordTraffic(true);
       applyRateLimitBlock(ip);
-      try {
-        await logBlockToDb({
-          ip,
-          attackType: "RATE_LIMIT_EXCEEDED",
-          requestDetails,
-        });
-      } catch (err) {
-        console.error("Rate limit log failed:", err.message);
-      }
-      return res.status(429).json({
-        error: "Too many requests from this IP. You have been temporarily blocked.",
-      });
-    }
-
-    if (blocklist.has(ip)) {
-      recordTraffic(true);
-      return res.status(403).json({
-        error: "Your IP has been blocked due to suspicious activity.",
-        attackType: blocklist.get(ip).attackType,
-      });
+      return sendBlocked(res, 429, ip, "RATE_LIMIT_EXCEEDED", requestDetails, false);
     }
 
     recordTraffic(false);
@@ -312,9 +330,14 @@ export function firewallMiddleware() {
         if (isFailed) {
           const failCount = trackFailedLogin(ip);
           if (failCount >= BRUTE_FORCE_THRESHOLD && !blocklist.has(ip)) {
-            await addToBlocklist(ip, "BRUTE_FORCE_ATTACK", {
-              ...requestDetails,
-              failedLoginCount: failCount,
+            recordBlock({
+              ip,
+              attackType: "BRUTE_FORCE_ATTACK",
+              requestDetails: {
+                ...requestDetails,
+                failedLoginCount: failCount,
+              },
+              permanent: true,
             });
           }
         } else if (res.statusCode === 200) {
