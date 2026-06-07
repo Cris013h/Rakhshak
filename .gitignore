@@ -1,0 +1,23 @@
+# Node dependencies
+node_modules/
+
+# Hardhat build artifacts
+artifacts/
+cache/
+
+# Environment files
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+
+# OS and editor files
+.DS_Store
+.vscode/
+.idea/
+
+# Optional: compiled output or temp files
+dist/
+tmp/
