@@ -9,7 +9,7 @@ const router = express.Router();
 router.use(authenticateToken, requireRole("Pharmacist"));
 
 router.get("/prescriptions", async (req, res) => {
-  const prescriptions = await Prescription.find({ status: "PENDING" })
+  const prescriptions = await Prescription.find()
     .sort({ created_at: -1 })
     .lean();
   return res.json({ prescriptions });

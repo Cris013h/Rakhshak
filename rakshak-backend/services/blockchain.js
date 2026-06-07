@@ -39,6 +39,10 @@ export function hashPasswordForChain(password) {
   return ethers.keccak256(ethers.toUtf8Bytes(password));
 }
 
+export function hashEmailForChain(email) {
+  return ethers.keccak256(ethers.toUtf8Bytes(email.toLowerCase().trim()));
+}
+
 export async function verifyStaffOnChain({ hospitalName, post, idNumber, password }) {
   const chainContract = getContract();
   if (!chainContract) return null;
@@ -49,6 +53,104 @@ export async function verifyStaffOnChain({ hospitalName, post, idNumber, passwor
   } catch (err) {
     console.error("Blockchain verifyStaff failed:", err.message);
     return false;
+  }
+}
+
+export async function preRegisterStaffOnChain({ fullName, idNumber, post, hospitalName, department, email }) {
+  const chainContract = getContract();
+  if (!chainContract) return null;
+
+  try {
+    const emailHash = hashEmailForChain(email);
+    const tx = await chainContract.preRegisterStaff(fullName, idNumber, post, hospitalName, department, emailHash);
+    const receipt = await tx.wait();
+    return receipt.hash;
+  } catch (err) {
+    console.error("Blockchain preRegisterStaff failed:", err.message);
+    return null;
+  }
+}
+
+export async function checkPreRegisteredOnChain(idNumber) {
+  const chainContract = getContract();
+  if (!chainContract) return { exists: false, activated: false };
+
+  try {
+    const [exists, activated] = await chainContract.checkPreRegistered(idNumber);
+    return { exists, activated };
+  } catch (err) {
+    console.error("Blockchain checkPreRegistered failed:", err.message);
+    return { exists: false, activated: false };
+  }
+}
+
+export async function getPreRegisteredDetailsOnChain(idNumber) {
+  const chainContract = getContract();
+  if (!chainContract) return null;
+
+  try {
+    const [fullName, post, hospitalName, department] = await chainContract.getPreRegisteredDetails(idNumber);
+    return { fullName, post, hospitalName, department };
+  } catch (err) {
+    console.error("Blockchain getPreRegisteredDetails failed:", err.message);
+    return null;
+  }
+}
+
+export async function activateStaffOnChain(idNumber, password) {
+  const chainContract = getContract();
+  if (!chainContract) return null;
+
+  try {
+    const passwordHash = hashPasswordForChain(password);
+    const tx = await chainContract.activateStaff(idNumber, passwordHash);
+    const receipt = await tx.wait();
+    return receipt.hash;
+  } catch (err) {
+    console.error("Blockchain activateStaff failed:", err.message);
+    return null;
+  }
+}
+
+export async function registerStaffOnChain({ hospitalName, post, idNumber, password }) {
+  const chainContract = getContract();
+  if (!chainContract) return null;
+
+  try {
+    const passwordHash = hashPasswordForChain(password);
+    const tx = await chainContract.registerStaff(hospitalName, post, idNumber, passwordHash);
+    const receipt = await tx.wait();
+    return receipt.hash;
+  } catch (err) {
+    console.error("Blockchain registerStaff failed:", err.message);
+    return null;
+  }
+}
+
+export async function storePublicKeyOnChain(idNumber, publicKey) {
+  const chainContract = getContract();
+  if (!chainContract) return null;
+
+  try {
+    const tx = await chainContract.storePublicKey(idNumber, publicKey);
+    const receipt = await tx.wait();
+    return receipt.hash;
+  } catch (err) {
+    console.error("Blockchain storePublicKey failed:", err.message);
+    return null;
+  }
+}
+
+export async function getPublicKeyFromChain(idNumber) {
+  const chainContract = getContract();
+  if (!chainContract) return null;
+
+  try {
+    const key = await chainContract.getPublicKey(idNumber);
+    return key && key.length > 0 ? key : null;
+  } catch (err) {
+    console.error("Blockchain getPublicKey failed:", err.message);
+    return null;
   }
 }
 
@@ -76,6 +178,20 @@ export async function logSuspiciousActivityOnChain({ idNumber, activityType }) {
     return receipt.hash;
   } catch (err) {
     console.error("Blockchain logSuspiciousActivity failed:", err.message);
+    return null;
+  }
+}
+
+export async function logRecordSignatureOnChain({ idNumber, recordHash, valid }) {
+  const chainContract = getContract();
+  if (!chainContract) return null;
+
+  try {
+    const tx = await chainContract.logRecordSignature(idNumber, recordHash, valid);
+    const receipt = await tx.wait();
+    return receipt.hash;
+  } catch (err) {
+    console.error("Blockchain logRecordSignature failed:", err.message);
     return null;
   }
 }

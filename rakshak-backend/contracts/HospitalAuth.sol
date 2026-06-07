@@ -10,7 +10,22 @@ contract HospitalAuth {
         bool exists;
     }
 
+    struct PreRegisteredStaff {
+        string fullName;
+        string idNumber;
+        string post;
+        string hospitalName;
+        string department;
+        bytes32 emailHash;
+        bool exists;
+        bool activated;
+        uint256 registeredAt;
+        address registeredBy;
+    }
+
     mapping(string => Staff) private staffRegistry;
+    mapping(string => PreRegisteredStaff) private preRegisteredStaff;
+    mapping(string => string) private staffPublicKeys;
 
     event LoginAttempt(
         string idNumber,
@@ -33,6 +48,29 @@ contract HospitalAuth {
         uint256 timestamp
     );
 
+    event StaffPreRegistered(
+        string idNumber,
+        string post,
+        uint256 timestamp
+    );
+
+    event StaffActivated(
+        string idNumber,
+        uint256 timestamp
+    );
+
+    event PublicKeyStored(
+        string idNumber,
+        uint256 timestamp
+    );
+
+    event RecordSignatureVerified(
+        string idNumber,
+        string recordHash,
+        bool valid,
+        uint256 timestamp
+    );
+
     function registerStaff(
         string memory hospitalName,
         string memory post,
@@ -47,6 +85,87 @@ contract HospitalAuth {
             passwordHash: passwordHash,
             exists: true
         });
+    }
+
+    function preRegisterStaff(
+        string memory fullName,
+        string memory idNumber,
+        string memory post,
+        string memory hospitalName,
+        string memory department,
+        bytes32 emailHash
+    ) public {
+        require(!preRegisteredStaff[idNumber].exists, "Already pre-registered");
+        preRegisteredStaff[idNumber] = PreRegisteredStaff({
+            fullName: fullName,
+            idNumber: idNumber,
+            post: post,
+            hospitalName: hospitalName,
+            department: department,
+            emailHash: emailHash,
+            exists: true,
+            activated: false,
+            registeredAt: block.timestamp,
+            registeredBy: msg.sender
+        });
+        emit StaffPreRegistered(idNumber, post, block.timestamp);
+    }
+
+    function checkPreRegistered(
+        string memory idNumber
+    ) public view returns (bool exists, bool activated) {
+        PreRegisteredStaff memory staff = preRegisteredStaff[idNumber];
+        return (staff.exists, staff.activated);
+    }
+
+    function getPreRegisteredDetails(
+        string memory idNumber
+    ) public view returns (
+        string memory fullName,
+        string memory post,
+        string memory hospitalName,
+        string memory department
+    ) {
+        PreRegisteredStaff memory staff = preRegisteredStaff[idNumber];
+        require(staff.exists, "Not pre-registered");
+        return (staff.fullName, staff.post, staff.hospitalName, staff.department);
+    }
+
+    function activateStaff(
+        string memory idNumber,
+        bytes32 passwordHash
+    ) public {
+        PreRegisteredStaff storage preStaff = preRegisteredStaff[idNumber];
+        require(preStaff.exists, "Not pre-registered");
+        require(!preStaff.activated, "Already activated");
+        require(!staffRegistry[idNumber].exists, "Staff already exists");
+
+        preStaff.activated = true;
+
+        staffRegistry[idNumber] = Staff({
+            hospitalName: preStaff.hospitalName,
+            post: preStaff.post,
+            idNumber: idNumber,
+            passwordHash: passwordHash,
+            exists: true
+        });
+
+        emit StaffActivated(idNumber, block.timestamp);
+    }
+
+    function storePublicKey(
+        string memory idNumber,
+        string memory publicKey
+    ) public {
+        require(staffRegistry[idNumber].exists, "Staff not registered");
+        staffPublicKeys[idNumber] = publicKey;
+        emit PublicKeyStored(idNumber, block.timestamp);
+    }
+
+    function getPublicKey(
+        string memory idNumber
+    ) public view returns (string memory) {
+        return staffPublicKeys[idNumber];
     }
 
     function verifyStaff(
@@ -85,6 +204,14 @@ contract HospitalAuth {
         string memory activityType
     ) public {
         emit SuspiciousActivity(idNumber, activityType, block.timestamp);
+    }
+
+    function logRecordSignature(
+        string memory idNumber,
+        string memory recordHash,
+        bool valid
+    ) public {
+        emit RecordSignatureVerified(idNumber, recordHash, valid, block.timestamp);
     }
 
     function staffExists(string memory idNumber) public view returns (bool) {

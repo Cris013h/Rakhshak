@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import authRoutes from "./routes/auth.js";
@@ -11,6 +13,7 @@ import nurseRoutes from "./routes/nurse.js";
 import pharmacistRoutes from "./routes/pharmacist.js";
 import receptionistRoutes from "./routes/receptionist.js";
 import patientRoutes from "./routes/patients.js";
+import recordRoutes from "./routes/records.js";
 import { firewallMiddleware, initFirewall } from "./middleware/firewall.js";
 import { initRSAKeys } from "./services/rsaService.js";
 
@@ -19,9 +22,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: ["http://localhost:5173", "http://127.0.0.1:5173"], credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false }));
 app.use(firewallMiddleware());
 
 app.get("/api/health", (_req, res) => {
@@ -36,6 +41,7 @@ app.use("/api/nurse", nurseRoutes);
 app.use("/api/pharmacist", pharmacistRoutes);
 app.use("/api/receptionist", receptionistRoutes);
 app.use("/api/patients", patientRoutes);
+app.use("/api/records", recordRoutes);
 
 async function start() {
   try {
