@@ -76,3 +76,1276 @@ rakshak-backend/
 ---
 
 👉 Do you want me to now go file‑by‑file and check whether each has **real working code** (not empty or placeholder), and fill in missing pieces where needed?
+
+
+
+new prompt
+1.Add REAL production-grade encryption to RAKSHAK project
+AND redesign the entire frontend to be a full-screen 
+professional website. Not a demo — everything must be 
+real and fully working.
+
+═══════════════════════════════════════════════════
+PART 1 — REAL ENCRYPTION (Production Grade)
+═══════════════════════════════════════════════════
+
+FEATURE 1 — REAL RSA ENCRYPTION (Password in Transit)
+Create rakshak-backend/services/rsaService.js:
+1. Generate RSA 2048-bit public/private key pair on 
+   server start using node-forge
+2. Store keys permanently in rakshak-backend/keys/ 
+   folder as public.pem and private.pem
+3. If keys already exist on startup load them, 
+   do not regenerate every time
+4. Create endpoint GET /api/public-key that sends 
+   real public key to frontend
+5. Create decryptRSA(encryptedData) function that 
+   actually decrypts incoming data using private.pem
+
+Update rakshak/src/api/api.js:
+1. On app load fetch real public key from /api/public-key
+2. Before every login request encrypt the entire 
+   credentials object using real RSA public key
+3. Use jsencrypt library for browser-side RSA encryption
+4. Backend receives encrypted blob, decrypts it 
+   with private key, then processes real credentials
+5. If decryption fails return 400 Bad Request
+
+FEATURE 2 — REAL AES-256 ENCRYPTION (Patient Data)
+Create rakshak-backend/services/aesService.js:
+1. Use Node.js built-in crypto module
+2. Algorithm: AES-256-CBC
+3. Generate unique random IV for every encryption
+4. Store encrypted data as: iv:encryptedData in database
+5. encryptAES(plaintext) → returns "iv:encryptedData"
+6. decryptAES(storedValue) → splits iv and data, 
+   returns original plaintext
+7. AES_SECRET_KEY must be exactly 32 characters 
+   stored in .env
+
+Apply AES to ALL sensitive patient fields:
+- name, dateOfBirth, diagnosis, prescription,
+  medicalHistory, insuranceNumber, address, 
+  phoneNumber, emergencyContact
+
+Create rakshak-backend/models/Patient.js:
+- Add pre-save hook that auto encrypts all 
+  sensitive fields before every save
+- Add toDecrypted() method returning fully 
+  decrypted patient object
+
+FEATURE 3 — KEEP ALL EXISTING ENCRYPTION
+Do not remove:
+- keccak256 in blockchain.js
+- bcrypt in auth.js  
+- JWT signing in middleware/auth.js
+
+FEATURE 4 — REAL PATIENT ROUTES
+Create rakshak-backend/routes/patients.js:
+POST   /api/patients/create  → encrypt and save
+GET    /api/patients/        → decrypt and return list
+GET    /api/patients/:id     → decrypt and return one
+PUT    /api/patients/:id     → re-encrypt and update
+All routes must check JWT + RBAC and log to blockchain
+
+Add patients route to server.js
+
+═══════════════════════════════════════════════════
+PART 2 — FULL SCREEN FRONTEND REDESIGN
+═══════════════════════════════════════════════════
+
+DESIGN RULES — APPLY TO EVERY PAGE:
+- Full screen layout, no centered boxes, no cards 
+  floating in the middle of empty space
+- Use 100vw and 100vh everywhere
+- Dark theme: background #0D1117, surface #161B22, 
+  accent #00A896, text white
+- Sidebar navigation on all dashboard pages
+- Every page must feel like a professional 
+  enterprise security product
+- Font: Inter or system-ui
+- No rounded login box in center — full split screen
+
+LOGIN PAGE — Full redesign:
+Left half (60% width):
+- Full height dark panel #0D1117
+- Large RAKSHAK logo at top left
+- Tagline: "Blockchain-Secured Healthcare Authentication"
+- Below tagline show 4 animated security stats:
+  "256-bit AES Encryption"
+  "RSA-2048 Transit Security"  
+  "Blockchain Audit Trail"
+  "Zero Trust Architecture"
+- Bottom left: show real time blockchain status:
+  "● Blockchain Connected — Block #1234"
+  Updates every 5 seconds with real block number
+
+Right half (40% width):
+- Background #161B22
+- At top: small RAKSHAK shield icon
+- Title: "Staff Authentication"
+- Subtitle: "Credentials verified on Ethereum blockchain"
+- 4 input fields full width:
+  Hospital Name, Post (dropdown), ID Number, Password
+- Login button full width accent color #00A896
+- Below button: 
+  "🔒 End-to-end RSA encrypted  •  Verified on blockchain"
+- After successful login show:
+  "✓ Blockchain verification complete"
+  "✓ RSA decryption successful"  
+  "✓ Session established"
+  Then auto redirect after 2 seconds
+
+SIDEBAR — Present on all dashboard pages:
+- Fixed left sidebar 240px wide background #0D1F3C
+- Top: RAKSHAK logo + shield icon
+- Below: logged in user card showing:
+  Name, Post badge (color coded), Hospital name
+- Navigation links with icons:
+  (show relevant links per role)
+  Dashboard, Patients, Audit Logs, 
+  Firewall Monitor, Encryption Monitor,
+  Anomaly Alerts, Settings, Logout
+- Active link highlighted with accent color
+- Bottom of sidebar: blockchain status indicator
+  "● Chain Active" in green
+
+ADMIN DASHBOARD — Full screen redesign:
+- No centered cards — full width layout
+- Top stats bar full width with 5 metrics:
+  Total Logins Today | Failed Attempts | 
+  Active Sessions | Anomalies | Blocked IPs
+- Main content split into panels:
+  Left 70%: Full audit log table
+  Right 30%: Live anomaly alerts feed
+- Audit table takes full remaining height
+- Firewall Monitor as separate full page tab
+- Encryption Monitor as separate full page tab
+
+DOCTOR DASHBOARD — Full screen redesign:
+- Left sidebar (already defined above)
+- Main content full width:
+  Top: search bar to find patients
+  Below: patient list as full width table rows
+  Click patient → right panel slides in (not popup)
+  showing full patient details
+
+NURSE DASHBOARD:
+- Full screen ward view
+- Patient cards in a grid layout full width
+
+PHARMACIST DASHBOARD:
+- Full screen prescription queue table
+
+RECEPTIONIST DASHBOARD:
+- Full screen appointment calendar view
+
+ALL DASHBOARDS:
+- Session timeout warning as a bottom banner 
+  not a popup
+- Anomaly alert as a top sticky banner in red
+- All tables full width with proper column sizing
+- Hover effects on all rows
+- Loading states for all data fetches
+
+═══════════════════════════════════════════════════
+PART 3 — ADDITIONAL REQUIREMENTS
+═══════════════════════════════════════════════════
+
+1. Update rakshak/src/index.css:
+   - Remove all centered box styles
+   - Add full screen base styles
+   - CSS variables for all colors
+
+2. Update rakshak/vite.config.js:
+   - Proxy /api requests to http://localhost:5000
+   - So frontend calls /api/login not 
+     http://localhost:5000/api/login
+
+3. Install required packages:
+   In rakshak: npm install jsencrypt react-router-dom 
+               recharts react-icons
+   In rakshak-backend: npm install node-forge
+
+4. Update .env files:
+   rakshak-backend/.env add:
+   AES_SECRET_KEY=rakshak_aes_32charkey_secure!!
+   AES_IV=rakshakiv16chars!
+
+5. After all changes confirm:
+   - Every file that was created
+   - Every file that was modified
+   - Startup commands to run everything
+
+Make every single file completely implemented.
+Zero placeholder comments anywhere.
+Every function must work with real data.
+Every page must be full screen professional design.
+
+
+2.Add the following real production-grade features to RAKSHAK.
+All files fully implemented, zero placeholders, real working code.
+
+═══════════════════════════════════════════════════
+FEATURE 1 — TWO FACTOR AUTHENTICATION (2FA with OTP)
+═══════════════════════════════════════════════════
+
+Create rakshak-backend/services/otpService.js:
+1. Generate cryptographically random 6 digit OTP
+2. OTP expires after 5 minutes
+3. Store OTP in MongoDB with:
+   idNumber, otp (hashed with bcrypt), 
+   expiresAt, used (boolean), createdAt
+4. Create model rakshak-backend/models/OTPLog.js
+
+Create rakshak-backend/services/emailService.js:
+1. Use nodemailer with Gmail SMTP (free)
+2. Send OTP email with this template:
+   Subject: "RAKSHAK — Your Login OTP"
+   Body: 
+   "Dear [Name],
+   Your one-time password for RAKSHAK login is:
+   
+   [OTP CODE]
+   
+   This code expires in 5 minutes.
+   If you did not request this, contact admin immediately.
+   
+   — RAKSHAK Security System"
+3. Add to .env:
+   EMAIL_USER=your_gmail@gmail.com
+   EMAIL_PASS=your_app_password
+
+Add new routes to rakshak-backend/routes/auth.js:
+
+POST /api/auth/login-step1:
+1. Receive hospitalName, post, idNumber, password
+2. Verify credentials on blockchain (existing logic)
+3. If valid → generate OTP → send to staff email
+4. Return: { message: "OTP sent", idNumber }
+5. Do NOT return JWT yet
+
+POST /api/auth/login-step2:
+1. Receive idNumber + OTP entered by user
+2. Fetch OTP from MongoDB
+3. Check: not expired, not already used, matches hash
+4. If valid → mark OTP as used → return JWT token
+5. If invalid → increment failed attempts → 
+   log FAILED_OTP to blockchain
+6. After 3 wrong OTPs → lock account
+
+Update rakshak/src/pages/Login.jsx:
+Step 1 screen: existing 4 field login form
+After step 1 success → animate transition to:
+Step 2 screen:
+- Title: "Two-Factor Verification"
+- Subtitle: "Enter the 6-digit code sent to your email"
+- 6 individual digit input boxes (like real OTP UI)
+  each box takes 1 digit, auto advances to next box
+- Resend OTP button (disabled for 60 seconds)
+- Countdown timer showing OTP expiry
+- Back button to return to step 1
+After step 2 success → show verification complete screen
+then redirect to dashboard
+
+═══════════════════════════════════════════════════
+FEATURE 2 — DIGITAL SIGNATURE ON MEDICAL RECORDS
+═══════════════════════════════════════════════════
+
+Create rakshak-backend/services/signatureService.js:
+1. Use Node.js crypto module
+2. generateKeyPair(idNumber) → creates RSA key pair 
+   specific to that staff member
+3. Store private key encrypted with AES in MongoDB
+4. Store public key on blockchain smart contract
+5. signRecord(idNumber, recordData) → 
+   creates SHA-256 hash of record →
+   signs hash with staff private key →
+   returns signature string
+6. verifySignature(idNumber, recordData, signature) →
+   fetches public key from blockchain →
+   verifies signature →
+   returns true/false
+
+Update contracts/HospitalAuth.sol:
+Add these functions:
+- storePublicKey(idNumber, publicKey) 
+- getPublicKey(idNumber) returns string
+- verifyRecordSignature event
+
+Create rakshak-backend/models/MedicalRecord.js:
+Fields:
+- patientId, doctorId, hospitalName
+- recordType (diagnosis/prescription/note/report)
+- content (AES encrypted)
+- signature (digital signature)
+- signedAt timestamp
+- verificationStatus (verified/tampered/unverified)
+- blockchainTxHash
+
+Update rakshak-backend/routes/patients.js:
+When doctor creates/updates any record:
+1. AES encrypt the content
+2. Sign the encrypted content with doctor's private key
+3. Store signature alongside record
+4. Log to blockchain with signature hash
+
+Add GET /api/records/verify/:recordId:
+1. Fetch record from MongoDB
+2. Fetch doctor's public key from blockchain
+3. Verify signature
+4. Return: verified=true/false + details
+
+Update DoctorDashboard.jsx:
+- Every record shows a green "✓ Digitally Signed" badge
+- Clicking badge shows signature details:
+  "Signed by: DOC001 on [date]"
+  "Signature: 3f4a9b..."
+  "Blockchain TX: 0x7b2c..."
+  "Status: ✓ Verified — Record Untampered"
+
+Update AdminDashboard.jsx:
+Add "Record Integrity" tab showing:
+- All records with verification status
+- Green rows = verified
+- Red rows = tampered (signature mismatch)
+- Verify All button that checks every record
+
+═══════════════════════════════════════════════════
+FEATURE 3 — PASSWORD STRENGTH ENFORCER
+═══════════════════════════════════════════════════
+
+Create rakshak-backend/services/passwordPolicy.js:
+Enforce ALL of these rules on every password:
+1. Minimum 12 characters
+2. At least 1 uppercase letter
+3. At least 1 lowercase letter  
+4. At least 1 number
+5. At least 1 special character (!@#$%^&*)
+6. Cannot contain idNumber or hospitalName
+7. Cannot reuse last 5 passwords
+8. Password expires after 90 days
+9. Check against list of 100 common weak passwords
+   (password123, admin123, etc.)
+
+Create rakshak-backend/models/PasswordHistory.js:
+Fields: idNumber, passwordHash, createdAt
+Keep last 5 password hashes per staff member
+
+Add password expiry check to auth middleware:
+If password older than 90 days:
+- Allow login but force password change
+- Redirect to /change-password
+- Cannot access any other page until changed
+
+Create POST /api/auth/change-password:
+1. Verify current password
+2. Check new password against all policy rules
+3. Check not in last 5 passwords
+4. bcrypt hash new password
+5. Update in MongoDB and blockchain
+6. Add old password to PasswordHistory
+7. Log PASSWORD_CHANGED to blockchain audit
+
+Update signup and password change forms with
+real time password strength indicator:
+- Progress bar showing strength 0-100%
+- Color: red(weak) → orange(fair) → green(strong)
+- Live checklist showing which rules pass/fail:
+  ✓ 12+ characters
+  ✗ Needs uppercase
+  ✓ Has number
+  etc.
+- Show "Password expires in 90 days" after set
+
+═══════════════════════════════════════════════════
+FEATURE 4 — STAFF REGISTRATION + SIGNUP SYSTEM
+═══════════════════════════════════════════════════
+
+This is a 3 stage system:
+
+STAGE 1 — ADMIN PRE-REGISTERS STAFF ON BLOCKCHAIN
+Update AdminDashboard.jsx:
+Add "Staff Management" tab with full screen table:
+- Shows all pre-registered staff on blockchain
+- Columns: ID Number | Name | Post | Hospital | 
+  Email | Status (Pending/Active/Locked)
+- Add New Staff button opens full screen form:
+  Fields: Full Name, ID Card Number, Post, 
+  Hospital Name, Email, Department, Phone
+- On submit: calls POST /api/admin/preregister-staff
+- This stores staff details on blockchain AND MongoDB
+- Staff status set to "Pending" until they signup
+
+Create POST /api/admin/preregister-staff:
+1. Admin JWT verified + Admin role checked
+2. Store on blockchain via new contract function:
+   preRegisterStaff(idNumber, name, post, 
+                    hospitalName, emailHash)
+3. Store full details in MongoDB model 
+   PreRegisteredStaff with status: pending
+4. Log STAFF_PREREGISTERED to blockchain audit
+5. Send welcome email to staff:
+   "You have been registered on RAKSHAK.
+    Visit [url]/signup to create your account.
+    You will need your ID Card Number to verify."
+
+Update HospitalAuth.sol:
+Add:
+- preRegisterStaff() function
+- checkPreRegistered(idNumber) returns bool
+- getPreRegisteredDetails(idNumber) 
+  returns name, post, hospitalName
+- activateStaff(idNumber) called after signup
+
+STAGE 2 — STAFF SIGNUP PAGE
+Create rakshak/src/pages/Signup.jsx:
+Full screen split layout matching login page design:
+
+Left half: same branding as login page
+
+Right half — 3 step signup flow:
+
+STEP 1 — Identity Verification:
+Title: "Verify Your Identity"
+Fields:
+- ID Card Number
+- Full Name (must match exactly)
+- Post (dropdown)
+- Hospital Name
+Submit button: "Verify Identity"
+On submit: calls POST /api/auth/verify-identity
+If blockchain confirms match → proceed to step 2
+If no match → "Identity not found. Contact admin."
+Show: "✓ Identity verified on blockchain"
+
+STEP 2 — Create Account:
+Title: "Create Your Account"  
+Fields:
+- Username (min 6 chars, unique)
+- Email (must match pre-registered email)
+- Password (with real time strength indicator)
+- Confirm Password
+Real time password strength bar and checklist
+Submit button: "Create Account"
+
+STEP 3 — Setup 2FA:
+Title: "Secure Your Account"
+Send OTP to their email
+6 digit OTP input boxes
+On verify: account fully activated
+Show success screen:
+"✓ Account Created"
+"✓ Identity Verified on Blockchain"  
+"✓ 2FA Enabled"
+"✓ Digital Signature Keys Generated"
+Redirect to login after 3 seconds
+
+Create POST /api/auth/verify-identity:
+1. Receive idNumber, name, post, hospitalName
+2. Call blockchain checkPreRegistered(idNumber)
+3. Call blockchain getPreRegisteredDetails(idNumber)
+4. Compare all fields exactly
+5. If match return: { verified: true, email }
+6. If no match return: { verified: false }
+7. Log IDENTITY_VERIFIED to blockchain
+
+Create POST /api/auth/signup:
+1. Verify identity token from step 1
+2. Check username not already taken
+3. Validate password against all policy rules
+4. Check password not in common passwords list
+5. bcrypt hash password
+6. keccak256 hash password for blockchain
+7. Call blockchain registerStaff() to activate
+8. Generate RSA key pair for digital signatures
+9. Store public key on blockchain
+10. Store encrypted private key in MongoDB
+11. Create staff account in MongoDB
+12. Send confirmation email
+13. Log STAFF_ACTIVATED to blockchain audit
+
+Add /signup route to rakshak/src/App.jsx
+Add "Create Account" link on login page
+Add "Back to Login" link on signup page
+
+STAGE 3 — LOGIN USES NEW CREDENTIALS
+Update login to use username OR idNumber:
+- Staff can login with username or ID number
+- Password checked against bcrypt hash
+- Then 2FA OTP sent
+- Then JWT issued
+
+═══════════════════════════════════════════════════
+PART 5 — INSTALL ALL REQUIRED PACKAGES
+═══════════════════════════════════════════════════
+
+In rakshak-backend run:
+npm install nodemailer node-forge bcrypt 
+            zxcvbn helmet express-rate-limit
+
+In rakshak run:
+npm install jsencrypt zxcvbn
+
+═══════════════════════════════════════════════════
+PART 6 — UPDATE .env FILE
+═══════════════════════════════════════════════════
+
+Add to rakshak-backend/.env:
+EMAIL_USER=your_gmail@gmail.com
+EMAIL_PASS=your_gmail_app_password
+OTP_EXPIRY_MINUTES=5
+PASSWORD_EXPIRY_DAYS=90
+MAX_PASSWORD_HISTORY=5
+AES_SECRET_KEY=rakshak_aes_32charkey_secure!!
+AES_IV=rakshakiv16chars!
+
+═══════════════════════════════════════════════════
+PART 7 — COMPLETE FILE LIST TO CREATE OR UPDATE
+═══════════════════════════════════════════════════
+
+New files to create:
+rakshak-backend/services/otpService.js
+rakshak-backend/services/emailService.js
+rakshak-backend/services/signatureService.js
+rakshak-backend/services/passwordPolicy.js
+rakshak-backend/models/OTPLog.js
+rakshak-backend/models/PasswordHistory.js
+rakshak-backend/models/MedicalRecord.js
+rakshak-backend/models/PreRegisteredStaff.js
+rakshak/src/pages/Signup.jsx
+
+Files to update:
+rakshak-backend/contracts/HospitalAuth.sol
+rakshak-backend/routes/auth.js
+rakshak-backend/routes/patients.js
+rakshak-backend/routes/admin.js
+rakshak-backend/server.js
+rakshak/src/App.jsx
+rakshak/src/pages/Login.jsx
+rakshak/src/pages/dashboards/AdminDashboard.jsx
+rakshak/src/pages/dashboards/DoctorDashboard.jsx
+
+After completing everything:
+1. List every file created or modified
+2. List any new environment variables needed
+3. Give exact startup commands
+4. Confirm zero placeholder comments anywhere
+
+
+Add real working Receptionist and Doctor functionality 
+to RAKSHAK. All files fully implemented, zero placeholders,
+real working code connected to real backend and database.
+
+═══════════════════════════════════════════════════
+RECEPTIONIST — PATIENT REGISTRATION
+═══════════════════════════════════════════════════
+
+UPDATE rakshak-backend/routes/patients.js:
+
+POST /api/patients/register:
+1. Only Receptionist role can access (check JWT + RBAC)
+2. Receive these fields from frontend:
+   - fullName
+   - dateOfBirth
+   - gender
+   - address
+   - phoneNumber
+   - emergencyContactName
+   - emergencyContactPhone
+   - insuranceNumber
+   - insuranceProvider
+   - bloodGroup
+   - allergies
+   - hospitalName (from JWT token automatically)
+   - registeredBy (receptionist idNumber from JWT)
+   - registeredAt (auto timestamp)
+3. Generate unique patientId (format: PAT-XXXX)
+4. AES-256 encrypt ALL sensitive fields before saving:
+   fullName, dateOfBirth, address, phoneNumber,
+   emergencyContactName, emergencyContactPhone,
+   insuranceNumber, bloodGroup, allergies
+5. Save encrypted patient to MongoDB
+6. Log to blockchain:
+   logDataAccess(receptionistId, 
+   "PATIENT_REGISTERED:" + patientId)
+7. Return: { success: true, patientId }
+
+GET /api/patients/search?name=:name&id=:patientId:
+1. Receptionist and Doctor can access
+2. Search by partial name or exact patientId
+3. Decrypt results before returning
+4. Log search to blockchain audit
+
+GET /api/patients/all:
+1. Receptionist sees all patients at their hospital
+2. Doctor sees only patients assigned to them
+3. All fields decrypted before returning
+4. Paginated: 20 per page
+
+PUT /api/patients/update/:patientId:
+1. Only Receptionist can update non-medical fields
+2. Re-encrypt updated fields before saving
+3. Log update to blockchain
+
+═══════════════════════════════════════════════════
+UPDATE ReceptionistDashboard.jsx — FULL REDESIGN
+═══════════════════════════════════════════════════
+
+Full screen layout with sidebar already defined.
+Main content has 3 tabs:
+
+TAB 1 — Register New Patient (default tab):
+Full screen registration form split into sections:
+
+Section 1 — Personal Information:
+- Full Name (text)
+- Date of Birth (date picker)
+- Gender (dropdown: Male/Female/Other)
+- Blood Group (dropdown: A+/A-/B+/B-/O+/O-/AB+/AB-)
+
+Section 2 — Contact Details:
+- Phone Number
+- Address (textarea)
+- Emergency Contact Name
+- Emergency Contact Phone
+
+Section 3 — Insurance Details:
+- Insurance Provider (text)
+- Insurance Number (text)
+
+Section 4 — Medical Flags:
+- Known Allergies (textarea)
+- Special Notes (textarea)
+
+Bottom: 
+- "Register Patient" button (full width accent color)
+- On success show:
+  "✓ Patient Registered Successfully"
+  "Patient ID: PAT-0001"
+  "✓ Data encrypted with AES-256"
+  "✓ Logged to blockchain"
+  Clear form button
+
+TAB 2 — Patient Search:
+- Large search bar at top full width
+- Search by name or patient ID
+- Results appear as full width table rows:
+  Patient ID | Name | DOB | Phone | 
+  Insurance | Registered By | Date
+- Click any row to see full patient details
+  in a right side panel that slides in
+- Edit button on detail panel to update details
+
+TAB 3 — Today's Registrations:
+- Table showing all patients registered today
+- Summary card at top: 
+  "X patients registered today"
+- Export button (for demo purposes shows 
+  JSON of today's registrations)
+
+═══════════════════════════════════════════════════
+DOCTOR — MEDICAL RECORDS
+═══════════════════════════════════════════════════
+
+UPDATE rakshak-backend/routes/records.js 
+(create this file):
+
+POST /api/records/create:
+1. Only Doctor role can access
+2. Receive:
+   - patientId
+   - recordType (enum: diagnosis/prescription/
+     lab_result/clinical_note/referral)
+   - content (the actual medical text)
+   - medications (array: name, dosage, frequency)
+   - followUpDate (optional)
+3. AES-256 encrypt content and medications
+4. Digitally sign the encrypted content 
+   using doctor's private key from signatureService
+5. Save to MedicalRecord model with:
+   patientId, doctorId, recordType,
+   encryptedContent, signature, 
+   signedAt, blockchainTxHash
+6. Log to blockchain:
+   logDataAccess(doctorId, 
+   "RECORD_CREATED:" + patientId)
+7. Return: { success: true, recordId, signature }
+
+GET /api/records/patient/:patientId:
+1. Doctor can only access their own patients
+2. Fetch all records for that patient
+3. Decrypt all content before returning
+4. Verify each record signature before returning
+5. Return records with verificationStatus field
+6. Log access to blockchain
+
+PUT /api/records/update/:recordId:
+1. Only the Doctor who created it can update
+2. Re-encrypt updated content
+3. Re-sign with doctor's private key
+4. Save new signature
+5. Keep old version in recordHistory array
+6. Log update to blockchain
+
+GET /api/records/verify/:recordId:
+1. Any authorized staff can verify
+2. Fetch record signature
+3. Fetch doctor public key from blockchain
+4. Verify signature matches content
+5. Return: verified true/false + details
+
+Add records routes to server.js:
+app.use('/api/records', recordsRouter)
+
+═══════════════════════════════════════════════════
+UPDATE DoctorDashboard.jsx — FULL REDESIGN
+═══════════════════════════════════════════════════
+
+Full screen layout with sidebar. Main content 4 tabs:
+
+TAB 1 — My Patients (default):
+- Search bar at top to find patients by name or ID
+- Patient list as full width cards showing:
+  Patient ID | Name | Age | Last Visit | 
+  Active Prescriptions | View Records button
+- Click View Records → opens TAB 2 filtered 
+  to that patient
+
+TAB 2 — Medical Records:
+Left panel (35% width) — Patient selector:
+- Search and select patient
+- Shows selected patient basic info card:
+  Name, DOB, Blood Group, Allergies (in red)
+
+Right panel (65% width) — Records:
+- Timeline view of all records for selected patient
+  most recent first
+- Each record shows:
+  Type badge (color coded):
+    Blue = Diagnosis
+    Green = Prescription  
+    Purple = Lab Result
+    Orange = Clinical Note
+  Date and time
+  Record content (decrypted)
+  "✓ Digitally Signed — DOC001" badge
+  "✓ Blockchain Verified" badge
+  Edit button (only for records created by 
+  this doctor)
+
+Add New Record button (floating bottom right):
+Opens full screen form overlay:
+- Record Type (dropdown with icons)
+- Content (rich textarea — large)
+- Medications section (add multiple rows):
+  Drug Name | Dosage | Frequency | Duration
+  + Add Medication button
+- Follow Up Date (date picker)
+- Preview section showing what will be signed
+- "Sign and Save Record" button
+  On click shows:
+  "Signing with your digital key..."
+  "Encrypting with AES-256..."
+  "Recording on blockchain..."
+  "✓ Record saved and signed"
+
+TAB 3 — Write Prescription:
+Dedicated prescription form:
+- Patient search and select
+- Medications list (add multiple):
+  Drug Name | Dosage | Frequency | 
+  Duration | Special Instructions
+- Diagnosis for prescription
+- Notes to pharmacist
+- Digital signature preview
+- "Sign and Submit Prescription" button
+- Submitted prescriptions appear in 
+  Pharmacist dashboard automatically
+
+TAB 4 — Record Verification:
+- Search any record by ID
+- Shows full verification details:
+  Record ID, Created by, Signed at
+  Signature hash
+  Public key from blockchain
+  Verification result: ✓ VERIFIED or ✗ TAMPERED
+- Useful for demo — show a record is untampered
+
+═══════════════════════════════════════════════════
+SUPPORTING BACKEND UPDATES
+═══════════════════════════════════════════════════
+
+Update rakshak-backend/models/Patient.js:
+Add field: assignedDoctors (array of doctorIds)
+When receptionist registers patient they can 
+optionally assign a doctor from dropdown
+
+Create rakshak-backend/models/MedicalRecord.js
+if not already existing with fields:
+patientId, doctorId, hospitalName, recordType,
+encryptedContent, signature, signedAt,
+blockchainTxHash, verificationStatus,
+recordHistory (array of previous versions),
+medications (array encrypted),
+followUpDate, createdAt, updatedAt
+
+Update rakshak-backend/routes/admin.js:
+GET /api/admin/assign-doctor:
+Admin can assign a doctor to a patient
+Updates patient's assignedDoctors array
+Logs to blockchain
+
+═══════════════════════════════════════════════════
+PACKAGES TO INSTALL
+═══════════════════════════════════════════════════
+
+In rakshak-backend run:
+npm install uuid
+
+═══════════════════════════════════════════════════
+AFTER COMPLETING CONFIRM:
+═══════════════════════════════════════════════════
+1. Every file created or modified
+2. All new API endpoints with their methods
+3. Startup commands
+4. Test flow:
+   - Login as REC001 → register a patient → 
+     get patient ID
+   - Login as DOC001 → find that patient → 
+     create a medical record → sign it →
+     verify signature on blockchain
+Update RAKSHAK so that Receptionist and Doctor 
+cannot just login — they must first be pre-registered 
+by Admin on blockchain, then go through the full 
+signup verification flow before they can access 
+the system.
+
+This must connect to the signup system already built.
+All files fully implemented, zero placeholders.
+
+═══════════════════════════════════════════════════
+THE COMPLETE FLOW — HOW IT MUST WORK
+═══════════════════════════════════════════════════
+
+STEP 1 — ADMIN PRE-REGISTERS STAFF
+Admin logs in → Staff Management tab →
+fills in staff details → stored on blockchain
+Staff cannot signup until admin does this first
+
+STEP 2 — STAFF RECEIVES EMAIL
+After admin pre-registers them, staff gets email:
+"You have been registered on RAKSHAK by Admin.
+Visit http://localhost:5173/signup to create 
+your account. You will need your ID Card Number,
+Full Name, Post, and Hospital Name to verify."
+
+STEP 3 — STAFF GOES TO /signup
+Enters their real ID Card details to verify identity
+Blockchain confirms they were pre-registered by admin
+If not pre-registered → blocked with message:
+"You are not registered in the system. 
+Contact your hospital admin."
+
+STEP 4 — STAFF CREATES ACCOUNT
+Username, email, password (with strength enforcer)
+Password must pass all policy rules
+
+STEP 5 — 2FA SETUP
+OTP sent to email
+Staff verifies OTP
+Account fully activated on blockchain
+
+STEP 6 — NOW THEY CAN LOGIN
+Using username + password + OTP every time
+
+═══════════════════════════════════════════════════
+PART 1 — UPDATE ADMIN DASHBOARD
+═══════════════════════════════════════════════════
+
+Update AdminDashboard.jsx Staff Management tab:
+
+PRE-REGISTRATION FORM must have these fields:
+- Full Name (text) — must match ID card exactly
+- ID Card Number (text) — unique identifier
+- Post (dropdown): 
+  Doctor, Nurse, Receptionist, 
+  Pharmacist, Admin
+- Hospital Name (auto filled from admin JWT)
+- Department (text)
+- Email Address (text) — OTP will be sent here
+- Phone Number (text)
+- Employee Start Date (date picker)
+
+After admin submits:
+1. Call POST /api/admin/preregister-staff
+2. Show success:
+   "✓ Staff pre-registered on blockchain"
+   "✓ Welcome email sent to [email]"
+   "Staff ID: [idNumber]"
+   "Status: Pending Signup"
+
+Staff Management table columns:
+ID Number | Full Name | Post | Department | 
+Email | Status | Registered On | Actions
+
+Status badges:
+- Yellow "Pending" = pre-registered, not signed up yet
+- Green "Active" = signed up and verified
+- Red "Locked" = account locked
+- Grey "Suspended" = suspended by admin
+
+Actions column buttons:
+- Resend Welcome Email
+- View Activity
+- Lock Account
+- Suspend Account
+
+═══════════════════════════════════════════════════
+PART 2 — UPDATE BLOCKCHAIN CONTRACT
+═══════════════════════════════════════════════════
+
+Update contracts/HospitalAuth.sol:
+Add these to the contract:
+
+struct PreRegisteredStaff {
+  string fullName;
+  string idNumber;
+  string post;
+  string hospitalName;
+  string department;
+  bytes32 emailHash;
+  bool exists;
+  bool activated;
+  uint256 registeredAt;
+  address registeredBy;
+}
+
+mapping(string => PreRegisteredStaff) 
+  private preRegisteredStaff;
+
+function preRegisterStaff(
+  string memory fullName,
+  string memory idNumber,
+  string memory post,
+  string memory hospitalName,
+  string memory department,
+  bytes32 emailHash
+) public — stores pre-registered staff
+
+function checkPreRegistered(
+  string memory idNumber
+) public view returns (bool exists, bool activated)
+
+function getPreRegisteredDetails(
+  string memory idNumber
+) public view returns (
+  string memory fullName,
+  string memory post,
+  string memory hospitalName,
+  string memory department
+)
+
+function activateStaff(
+  string memory idNumber,
+  bytes32 passwordHash
+) public — activates account after signup
+
+event StaffPreRegistered(
+  string idNumber, 
+  string post, 
+  uint256 timestamp
+)
+
+event StaffActivated(
+  string idNumber, 
+  uint256 timestamp
+)
+
+═══════════════════════════════════════════════════
+PART 3 — UPDATE BACKEND ROUTES
+═══════════════════════════════════════════════════
+
+Update rakshak-backend/routes/admin.js:
+
+POST /api/admin/preregister-staff:
+1. Verify Admin JWT + Admin role
+2. Check idNumber not already registered
+3. Hash email with keccak256
+4. Call blockchain preRegisterStaff()
+5. Save to MongoDB PreRegisteredStaff model:
+   fullName, idNumber, post, hospitalName,
+   department, email, phone, startDate,
+   status: "pending", registeredBy, registeredAt
+6. Send welcome email via emailService:
+   Subject: "Welcome to RAKSHAK — Complete Your Registration"
+   Body:
+   "Dear [fullName],
+   
+   You have been registered on RAKSHAK Healthcare 
+   Security System by your hospital administrator.
+   
+   To complete your registration visit:
+   http://localhost:5173/signup
+   
+   You will need:
+   • Your ID Card Number: [idNumber]
+   • Your Full Name: [fullName]
+   • Your Post: [post]
+   • Your Hospital: [hospitalName]
+   
+   This link is valid for 48 hours.
+   
+   — RAKSHAK Security Team"
+7. Log STAFF_PREREGISTERED to blockchain audit
+8. Return success with idNumber
+
+GET /api/admin/staff-list:
+1. Admin only
+2. Return all staff from MongoDB with status
+3. Include blockchain activation status
+
+POST /api/admin/resend-welcome-email/:idNumber:
+1. Admin only
+2. Fetch staff from MongoDB
+3. Resend welcome email
+4. Log to audit
+
+PUT /api/admin/staff-status/:idNumber:
+1. Admin only
+2. Update status: active/locked/suspended
+3. If locked: call lockout service
+4. Log status change to blockchain
+
+Update rakshak-backend/routes/auth.js:
+
+POST /api/auth/verify-identity:
+1. Receive: idNumber, fullName, post, hospitalName
+2. Call blockchain checkPreRegistered(idNumber)
+3. If not exists: return 404 
+   "Not registered. Contact admin."
+4. If already activated: return 409
+   "Account already exists. Please login."
+5. Call blockchain getPreRegisteredDetails(idNumber)
+6. Compare ALL fields case-insensitively:
+   fullName must match exactly
+   post must match exactly
+   hospitalName must match exactly
+7. If all match: return 200 with:
+   { verified: true, email (masked), 
+     department, verificationToken }
+   verificationToken is a JWT valid for 
+   10 minutes only for signup completion
+8. If no match: return 401
+   "Details do not match our records."
+9. Log IDENTITY_VERIFICATION_ATTEMPT to blockchain
+
+POST /api/auth/signup:
+1. Verify verificationToken from step above
+2. Extract idNumber from token
+3. Check username not taken
+4. Validate email matches pre-registered email
+5. Run ALL password policy checks:
+   - Min 12 characters
+   - Uppercase, lowercase, number, symbol
+   - Not containing idNumber
+   - Not in common passwords list
+6. bcrypt hash password
+7. keccak256 hash for blockchain
+8. Call blockchain activateStaff(idNumber, hash)
+9. Generate RSA key pair for digital signatures
+10. Store public key on blockchain
+11. Store encrypted private key in MongoDB
+12. Create account in MongoDB Staff model
+13. Update PreRegisteredStaff status to "active"
+14. Send OTP to email for 2FA verification
+15. Return { success: true, message: "OTP sent" }
+
+POST /api/auth/verify-signup-otp:
+1. Verify OTP matches
+2. Mark account as fully verified
+3. Log STAFF_ACTIVATED to blockchain
+4. Return { success: true, redirectTo: "/login" }
+5. Send confirmation email:
+   "Your RAKSHAK account is now active.
+    You can login at http://localhost:5173"
+
+═══════════════════════════════════════════════════
+PART 4 — UPDATE SIGNUP PAGE
+═══════════════════════════════════════════════════
+
+Update rakshak/src/pages/Signup.jsx:
+Full screen split layout same as login page.
+
+Left panel: same branding
+
+Right panel — 4 step flow with progress bar at top:
+Step 1 ──── Step 2 ──── Step 3 ──── Step 4
+
+STEP 1 — Identity Verification:
+Title: "Verify Your Identity"
+Subtitle: "Enter your details exactly as 
+registered by your admin"
+Fields:
+- ID Card Number
+- Full Name
+- Post (dropdown)
+- Hospital Name
+Button: "Verify on Blockchain"
+Loading state: "Checking blockchain..."
+On success:
+  "✓ Identity verified on blockchain"
+  "✓ Pre-registration confirmed"
+  Show masked email: "OTP will be sent to: j***@gmail.com"
+  Auto advance to step 2
+
+STEP 2 — Create Account:
+Title: "Create Your Account"
+Fields:
+- Username (min 6 chars, check availability live)
+  Show "✓ Available" or "✗ Taken" as user types
+- Email Address
+  Must match pre-registered email
+- Password with real time strength indicator:
+  Progress bar: red → orange → green
+  Live checklist:
+  [ ] Minimum 12 characters
+  [ ] Uppercase letter
+  [ ] Lowercase letter
+  [ ] Number
+  [ ] Special character (!@#$%^&*)
+  [ ] Does not contain your ID number
+- Confirm Password
+  Show "✓ Passwords match" or "✗ No match"
+Button: "Continue"
+
+STEP 3 — Verify Email (2FA Setup):
+Title: "Verify Your Email"
+Subtitle: "Enter the 6-digit code sent to your email"
+6 individual digit input boxes
+Auto advance between boxes
+Resend button (60 second cooldown with countdown)
+OTP expiry countdown: "Code expires in 4:32"
+Button: "Verify Code"
+
+STEP 4 — Success Screen:
+Large green checkmark animation
+"Account Successfully Created"
+Checklist:
+✓ Identity verified on blockchain
+✓ Account created securely  
+✓ AES-256 encryption enabled
+✓ Digital signature keys generated
+✓ 2FA authentication enabled
+✓ Blockchain audit trail active
+"Redirecting to login in 3 seconds..."
+Countdown: 3... 2... 1...
+
+═══════════════════════════════════════════════════
+PART 5 — UPDATE LOGIN PAGE
+═══════════════════════════════════════════════════
+
+Update Login.jsx:
+- Change login fields to accept 
+  Username OR ID Number (one field, system detects which)
+- Password field
+- Below login button add:
+  "New staff? Create your account →" 
+  links to /signup
+- Keep existing 2FA OTP step 2 flow
+
+═══════════════════════════════════════════════════
+PART 6 — UPDATE SEED SCRIPT
+═══════════════════════════════════════════════════
+
+Update rakshak-backend/seed.js:
+Instead of directly registering staff,
+now seed using the pre-registration flow:
+
+1. Pre-register 5 staff on blockchain as Admin would:
+   preRegisterStaff() for each test user
+
+2. Then immediately run signup flow for each:
+   activateStaff() with their password hashes
+
+3. So all 5 test accounts work immediately 
+   without needing to go through signup UI
+
+4. Print to console:
+   "Pre-registering staff on blockchain..."
+   "Activating ADM001..."
+   "Activating DOC001..."
+   "All staff registered and activated"
+   
+   "═══ LOGIN CREDENTIALS ═══"
+   "Hospital: City General"
+   "Admin:        ADM001 / admin123"
+   "Doctor:       DOC001 / Doc@123456"
+   "Nurse:        NRS001 / Nurse@123456"
+   "Pharmacist:   PHA001 / Pharma@123456"
+   "Receptionist: REC001 / Recep@123456"
+   "Note: Passwords now meet 12 char policy"
+
+═══════════════════════════════════════════════════
+PART 7 — NEW MONGODB MODELS
+═══════════════════════════════════════════════════
+
+Create rakshak-backend/models/PreRegisteredStaff.js:
+Fields:
+- fullName (String, required)
+- idNumber (String, required, unique)
+- post (String, enum: Doctor/Nurse/Receptionist/
+        Pharmacist/Admin)
+- hospitalName (String, required)
+- department (String)
+- email (String, required)
+- phone (String)
+- startDate (Date)
+- status (enum: pending/active/locked/suspended)
+- registeredBy (String — admin idNumber)
+- registeredAt (Date, default now)
+- activatedAt (Date)
+- blockchainTxHash (String)
+
+Create rakshak-backend/models/Staff.js:
+Fields:
+- idNumber (String, required, unique)
+- username (String, required, unique)
+- email (String, required)
+- passwordHash (String)
+- post (String)
+- hospitalName (String)
+- department (String)
+- rsaPublicKey (String — stored on blockchain too)
+- rsaPrivateKeyEncrypted (String — AES encrypted)
+- passwordChangedAt (Date)
+- passwordHistory (Array of hashes, max 5)
+- isActive (Boolean, default true)
+- lastLogin (Date)
+- createdAt (Date)
+
+═══════════════════════════════════════════════════
+PART 8 — UPDATE App.jsx ROUTES
+═══════════════════════════════════════════════════
+
+Update rakshak/src/App.jsx:
+Routes:
+/ → Login page
+/signup → Signup page (public)
+/dashboard → Protected, redirects by role
+/dashboard/admin → Admin only
+/dashboard/doctor → Doctor only
+/dashboard/nurse → Nurse only
+/dashboard/pharmacist → Pharmacist only
+/dashboard/receptionist → Receptionist only
+/change-password → Protected, any role
+
+═══════════════════════════════════════════════════
+AFTER COMPLETING CONFIRM:
+═══════════════════════════════════════════════════
+1. Every file created or modified with full path
+2. Updated startup commands
+3. Confirm seed script uses new password policy
+   compliant passwords
+4. Confirm blockchain contract was updated
+5. Confirm zero placeholder
