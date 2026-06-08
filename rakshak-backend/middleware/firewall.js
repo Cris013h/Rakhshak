@@ -2,10 +2,10 @@ import { FirewallLog } from "../models/FirewallLog.js";
 import { logDataAccessOnChain } from "../services/blockchain.js";
 import { getClientIp } from "./auth.js";
 
-const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_MAX = 100;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_BLOCK_MS = 5 * 60 * 1000;
-const FLOOD_THRESHOLD = 30;
+const FLOOD_THRESHOLD = 50;
 const BRUTE_FORCE_THRESHOLD = 10;
 
 const SQL_PATTERNS = [

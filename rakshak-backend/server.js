@@ -26,7 +26,7 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: ["http://localhost:5173", "http://127.0.0.1:5173"], credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false }));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 3000, standardHeaders: true, legacyHeaders: false }));
 app.use(firewallMiddleware());
 
 app.get("/api/health", (_req, res) => {

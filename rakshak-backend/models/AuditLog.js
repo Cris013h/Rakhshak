@@ -2,12 +2,20 @@ import mongoose from "mongoose";
 
 const ACTION_TYPES = [
   "LOGIN",
+  "LOGIN_STEP1",
   "LOGOUT",
   "RECORD_ACCESS",
   "SESSION_TIMEOUT",
   "LOCKOUT",
   "UNLOCK",
   "ANOMALY",
+  "PATIENT_REGISTERED",
+  "FAILED_OTP",
+  "STAFF_SIGNUP",
+  "STAFF_ACTIVATED",
+  "PASSWORD_CHANGED",
+  "IDENTITY_VERIFICATION_ATTEMPT",
+  "STAFF_PREREGISTERED",
 ];
 
 const auditLogSchema = new mongoose.Schema({
